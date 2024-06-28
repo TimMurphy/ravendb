@@ -10,7 +10,7 @@ namespace Voron;
 public record EnvironmentStateRecord(
     Pager2.State DataPagerState, 
     long TransactionId,
-    Dictionary<long, PageFromScratchBuffer> ScratchPagesTable,
+    ImmutableDictionary<long, PageFromScratchBuffer> ScratchPagesTable,
     long FlushedToJournal,
     TreeMutableState Root,
     long NextPageNumber
