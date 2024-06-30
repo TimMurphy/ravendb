@@ -152,7 +152,8 @@ namespace Voron
                     ImmutableDictionary<long, PageFromScratchBuffer>.Empty, 
                     0,
                     null, 
-                    -1);
+                    -1,
+                    null);
                 
                 _lastValidPageAfterLoad = dataPagerState.NumberOfAllocatedPages;
                 Debug.Assert(_lastValidPageAfterLoad != 0);
@@ -733,7 +734,6 @@ namespace Voron
                     if (flags == TransactionFlags.ReadWrite)
                     {
                         tx.CurrentTransactionHolder = _currentWriteTransactionHolder;
-                        tx.AfterCommitWhenNewTransactionsPrevented += AfterCommitWhenNewTransactionsPrevented;
                     }
                     else
                     {
@@ -776,11 +776,6 @@ namespace Voron
         internal void InvokeNewTransactionCreated(LowLevelTransaction tx)
         {
             NewTransactionCreated?.Invoke(tx);
-        }
-
-        internal void InvokeAfterCommitWhenNewTransactionsPrevented(LowLevelTransaction tx)
-        {
-            AfterCommitWhenNewTransactionsPrevented?.Invoke(tx);
         }
 
 #if DEBUG
@@ -911,7 +906,6 @@ namespace Voron
         }
 
         public event Action<LowLevelTransaction> NewTransactionCreated;
-        public event Action<LowLevelTransaction> AfterCommitWhenNewTransactionsPrevented;
 
         internal void TransactionAfterCommit(LowLevelTransaction tx)
         {

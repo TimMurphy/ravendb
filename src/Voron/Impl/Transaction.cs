@@ -733,5 +733,10 @@ namespace Voron.Impl
             public override int GetHashCode() =>
                 HashCode.Combine(_tableName.GetHashCode(), _compressed);
         }
+
+        public void UpdateClientState(object state)
+        {
+            LowLevelTransaction.UpdateClientState(state);
+        }
     }
 }
