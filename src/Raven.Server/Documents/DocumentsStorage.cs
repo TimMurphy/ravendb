@@ -322,6 +322,7 @@ namespace Raven.Server.Documents
                 LastEtag = ReadLastEtag(tx),
                 LastRevisionsEtag = ReadLastRevisionsEtag(tx),
                 LastTombstoneEtag = ReadLastTombstoneEtag(tx),
+                ConflictsCount =  ConflictsStorage.GetNumberOfConflicts(tx)
             };
 
             using (ContextPool.AllocateOperationContext(out JsonOperationContext ctx))
@@ -349,7 +350,7 @@ namespace Raven.Server.Documents
             // we set it on the current transaction because we aren't committed yet
             // this is used to remember the metadata about collections / documents for
             // common operations. Thread safety is inherited from the voron transaction
-            tx.UpdateClientState(currentCache);
+            tx.LowLevelTransaction.UpdateClientState(currentCache);
         }
 
 
@@ -1190,7 +1191,7 @@ namespace Raven.Server.Documents
 
             if (table.ReadByKey(lowerId, out tvr) == false)
             {
-                if (throwOnConflict && ConflictsStorage.ConflictsCount > 0)
+                if (throwOnConflict && ConflictsStorage.HasConflicts(context))
                     ConflictsStorage.ThrowOnDocumentConflict(context, lowerId);
 
                 return false;
@@ -2612,7 +2613,7 @@ namespace Raven.Server.Documents
             var nonPersistentFlags = NonPersistentDocumentFlags.None;
             var fromReplication = flags.Contain(DocumentFlags.FromReplication);
 
-            if (ConflictsStorage.ConflictsCount != 0)
+            if (ConflictsStorage.HasConflicts(context))
             {
                 // Since this document resolve the conflict we don't need to alter the change vector.
                 // This way we avoid another replication back to the source

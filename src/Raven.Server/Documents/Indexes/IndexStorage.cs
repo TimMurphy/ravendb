@@ -545,14 +545,13 @@ namespace Raven.Server.Documents.Indexes
 
             public long ReadLastProcessedReferenceEtag(Transaction tx, string collection, CollectionName referencedCollection)
             {
-                if (tx.IsWriteTransaction == false && tx.LowLevelTransaction.CurrentStateRecord.ClientState is IndexTransactionCache cache)
+                if (tx.IsWriteTransaction == false && tx.LowLevelTransaction.CurrentStateRecord.ClientState is IndexStateRecord cache)
                 {
                     switch (_type)
                     {
                         case ReferencesType.Documents:
-                            IndexTransactionCache.ReferenceCollectionEtags documentEtags = default;
                             if (cache.Collections.TryGetValue(collection, out var val) &&
-                                val.LastReferencedEtags?.TryGetValue(referencedCollection.Name, out documentEtags) == true)
+                                val.LastReferencedEtags?.TryGetValue(referencedCollection.Name, out var documentEtags) == true)
                             {
                                 return documentEtags.LastEtag;
                             }
@@ -589,14 +588,13 @@ namespace Raven.Server.Documents.Indexes
 
             public long ReadLastProcessedReferenceTombstoneEtag(Transaction tx, string collection, CollectionName referencedCollection)
             {
-                if (tx.IsWriteTransaction == false && tx.LowLevelTransaction.CurrentStateRecord.ClientState is IndexTransactionCache cache)
+                if (tx.IsWriteTransaction == false && tx.LowLevelTransaction.CurrentStateRecord.ClientState is IndexStateRecord cache)
                 {
                     switch (_type)
                     {
                         case ReferencesType.Documents:
-                            IndexTransactionCache.ReferenceCollectionEtags documentEtags = default;
                             if (cache.Collections.TryGetValue(collection, out var val) &&
-                                val.LastReferencedEtags?.TryGetValue(referencedCollection.Name, out documentEtags) == true)
+                                val.LastReferencedEtags?.TryGetValue(referencedCollection.Name, out var documentEtags) == true)
                             {
                                 return documentEtags.LastProcessedTombstoneEtag;
                             }
@@ -773,7 +771,7 @@ namespace Raven.Server.Documents.Indexes
             var txi = tx.InnerTransaction;
             if (txi.IsWriteTransaction == false)
             {
-                if (txi.LowLevelTransaction.CurrentStateRecord.ClientState is IndexTransactionCache cache)
+                if (txi.LowLevelTransaction.CurrentStateRecord.ClientState is IndexStateRecord cache)
                 {
                     if (cache.Collections.TryGetValue(collection, out var val))
                         return val.LastProcessedTombstoneEtag;
@@ -791,7 +789,7 @@ namespace Raven.Server.Documents.Indexes
             var txi = tx.InnerTransaction;
             if (txi.IsWriteTransaction == false)
             {
-                if (txi.LowLevelTransaction.CurrentStateRecord.ClientState is IndexTransactionCache cache)
+                if (txi.LowLevelTransaction.CurrentStateRecord.ClientState is IndexStateRecord cache)
                 {
                     if (cache.Collections.TryGetValue(collection, out var val))
                         return val.LastIndexedEtag;
