@@ -250,8 +250,9 @@ namespace Raven.Server.Rachis
 
         private void CastVoteForSelf(long electionTerm, string reason, bool setStateChange = true)
         {
-            var command = new CandidateCastVoteInTermCommand(this, _engine, electionTerm, reason);
+            var command = new CandidateCastVoteInTermCommand(_engine, electionTerm, reason);
             _engine.TxMerger.EnqueueSync(command);
+            RunRealElectionAtTerm = ElectionTerm = electionTerm;
 
             if (_engine.Log.IsInfoEnabled)
             {

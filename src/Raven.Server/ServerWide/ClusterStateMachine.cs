@@ -1392,47 +1392,49 @@ namespace Raven.Server.ServerWide
 
         private void ExecuteManyOnDispose(ClusterOperationContext context, long index, string type, List<Func<Task>> tasks)
         {
-            context.Transaction.InnerTransaction.LowLevelTransaction.AfterCommitWhenNewTransactionsPrevented += _ =>
+            var removeValue = _rachisLogIndexNotifications.AddTask(index);
+            context.Transaction.InnerTransaction.LowLevelTransaction.OnDispose += tx =>
             {
                 var count = tasks.Count;
-                _rachisLogIndexNotifications.AddTask(index);
-
-                if (count == 0)
+                if (tx.Committed)
                 {
-                    NotifyAndSetCompleted(index);
-                    return;
+                    if (count == 0)
+                    {
+                        NotifyAndSetCompleted(index);
+                        return;
+                    }
+                }
+                else
+                {
+                    removeValue.Remove();
                 }
 
+                var exceptionAggregator =
+                    new ExceptionAggregator(_parent.Log, $"the raft index {index} is committed, but an error occured during executing the {type} command.");
 
-                context.Transaction.InnerTransaction.LowLevelTransaction.OnDispose += tx =>
+                foreach (var task in tasks)
                 {
-                    var exceptionAggregator =
-                        new ExceptionAggregator(_parent.Log, $"the raft index {index} is committed, but an error occured during executing the {type} command.");
-
-                    foreach (var task in tasks)
+                    Task.Run(async () =>
                     {
-                        Task.Run(async () =>
+                        await exceptionAggregator.ExecuteAsync(task());
+                        if (Interlocked.Decrement(ref count) == 0)
                         {
-                            await exceptionAggregator.ExecuteAsync(task());
-                            if (Interlocked.Decrement(ref count) == 0)
+                            Exception error = null;
+                            try
                             {
-                                Exception error = null;
-                                try
-                                {
-                                    exceptionAggregator.ThrowIfNeeded();
-                                }
-                                catch (Exception e)
-                                {
-                                    error = e;
-                                }
-                                finally
-                                {
-                                    _rachisLogIndexNotifications.NotifyListenersAbout(index, error);
-                                }
+                                exceptionAggregator.ThrowIfNeeded();
                             }
-                        });
-                    }
-                };
+                            catch (Exception e)
+                            {
+                                error = e;
+                            }
+                            finally
+                            {
+                                _rachisLogIndexNotifications.NotifyListenersAbout(index, error);
+                            }
+                        }
+                    });
+                }
             };
         }
 

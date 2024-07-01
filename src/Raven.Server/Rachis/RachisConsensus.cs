@@ -930,62 +930,61 @@ namespace Raven.Server.Rachis
 
             PrevStates.LimitedSizeEnqueue(transition, 5);
 
-            context.Transaction.InnerTransaction.LowLevelTransaction.AfterCommitWhenNewTransactionsPrevented +=
-                _ => CurrentState = rachisState; //  we need this to happened while we still under the write lock
-
-            context.Transaction.InnerTransaction.LowLevelTransaction.OnDispose += tx =>
+            context.Transaction.InnerTransaction.LowLevelTransaction.OnDispose += llt =>
             {
-                if (tx is LowLevelTransaction llt && llt.Committed)
+                if (!llt.Committed) 
+                    return;
+                
+                CurrentState = rachisState; //  we need this to happened while we still under the write lock try
+                    
+                try
                 {
-                    try
+                    beforeStateChangedEvent?.Invoke();
+                }
+                catch (Exception e)
+                {
+                    if (Log.IsInfoEnabled)
                     {
-                        beforeStateChangedEvent?.Invoke();
+                        Log.Info("Before state change invocation function failed.", e);
                     }
-                    catch (Exception e)
+                }
+
+                try
+                {
+                    StateChanged?.Invoke(this, transition);
+                }
+                catch (Exception e)
+                {
+                    if (Log.IsInfoEnabled)
+                    {
+                        Log.Info("State change invocation function failed.", e);
+                    }
+                }
+
+                if (disposeAsync)
+                {
+                    TaskExecutor.CompleteReplaceAndExecute(ref _stateChanged, () =>
                     {
                         if (Log.IsInfoEnabled)
                         {
-                            Log.Info("Before state change invocation function failed.", e);
+                            Log.Info($"Initiate disposing the term _prior_ to {expectedTerm:#,#;;0} with {toDispose.Count} things to dispose.");
                         }
-                    }
 
-                    try
-                    {
-                        StateChanged?.Invoke(this, transition);
-                    }
-                    catch (Exception e)
-                    {
-                        if (Log.IsInfoEnabled)
-                        {
-                            Log.Info("State change invocation function failed.", e);
-                        }
-                    }
-
-                    if (disposeAsync)
-                    {
-                        TaskExecutor.CompleteReplaceAndExecute(ref _stateChanged, () =>
-                        {
-                            if (Log.IsInfoEnabled)
-                            {
-                                Log.Info($"Initiate disposing the term _prior_ to {expectedTerm:#,#;;0} with {toDispose.Count} things to dispose.");
-                            }
-
-                            ParallelDispose(toDispose);
-                        });
-                    }
-                    else
-                    {
                         ParallelDispose(toDispose);
-                        TaskExecutor.CompleteAndReplace(ref _stateChanged);
-                    }
+                    });
+                }
+                else
+                {
+                    ParallelDispose(toDispose);
+                    TaskExecutor.CompleteAndReplace(ref _stateChanged);
+                }
 
-                    var elapsed = sp.Elapsed;
-                    if (elapsed > ElectionTimeout / 2)
+                var elapsed = sp.Elapsed;
+                if (elapsed > ElectionTimeout / 2)
+                {
+                    if (Log.IsOperationsEnabled)
                     {
-                        if (Log.IsOperationsEnabled)
-                        {
-                            Log.Operations($"Took way too much time ({elapsed}) to change the state to {rachisState} in term {expectedTerm:#,#;;0}. (Election timeout:{ElectionTimeout})");
-                        }
+                        Log.Operations($"Took way too much time ({elapsed}) to change the state to {rachisState} in term {expectedTerm:#,#;;0}. (Election timeout:{ElectionTimeout})");
                     }
                 }
             };

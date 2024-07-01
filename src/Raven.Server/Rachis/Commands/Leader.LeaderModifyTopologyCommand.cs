@@ -106,10 +106,10 @@ public partial class Leader
                 _engine.GetStateMachine().EnsureNodeRemovalOnDeletion(context, _leader.Term, _nodeTag);
             }
 
-            // after commit but still under the lock
-            context.Transaction.InnerTransaction.LowLevelTransaction.AfterCommitWhenNewTransactionsPrevented += (tx) =>
+            context.Transaction.InnerTransaction.LowLevelTransaction.OnDispose += (tx) =>
             {
-                AfterCommit(index);
+                if(tx.Committed) 
+                    AfterCommit(index);
             };
 
             return 1;
