@@ -321,7 +321,7 @@ namespace Raven.Server.Documents.Indexes.Persistence.Lucene
                         : null;
 
                     var lastReferenceEtags = ImmutableDictionary.CreateBuilder<string, IndexStateRecord.ReferenceCollectionEtags>();
-                    if (referencedCollections.TryGetValue(collection, out var collectionNames))
+                    if (referencedCollections?.TryGetValue(collection, out var collectionNames) ==true && collectionNames.Count > 0)
                     {
                         foreach (var collectionName in collectionNames)
                         {
