@@ -23,7 +23,7 @@ using System.Runtime.InteropServices;
 #endif
 
 #if !SILVERLIGHT && !NETFX_CORE
-[assembly: SuppressIldasm()]
+//[assembly: SuppressIldasm()]
 #endif
 
 #if DEBUG

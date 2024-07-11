@@ -399,12 +399,13 @@ namespace Raven.Imports.Newtonsoft.Json.Serialization
 #if !(SILVERLIGHT || NETFX_CORE || PORTABLE)
           try
           {
-            new ReflectionPermission(ReflectionPermissionFlag.MemberAccess).Demand();
-            new ReflectionPermission(ReflectionPermissionFlag.RestrictedMemberAccess).Demand();
-            new SecurityPermission(SecurityPermissionFlag.SkipVerification).Demand();
-            new SecurityPermission(SecurityPermissionFlag.UnmanagedCode).Demand();
-            new SecurityPermission(PermissionState.Unrestricted).Demand();
-            _dynamicCodeGeneration = true;
+              throw new NotImplementedException();
+              //new ReflectionPermission(ReflectionPermissionFlag.MemberAccess).Demand();
+              //new ReflectionPermission(ReflectionPermissionFlag.RestrictedMemberAccess).Demand();
+              //new SecurityPermission(SecurityPermissionFlag.SkipVerification).Demand();
+              //new SecurityPermission(SecurityPermissionFlag.UnmanagedCode).Demand();
+              //new SecurityPermission(PermissionState.Unrestricted).Demand();
+              //_dynamicCodeGeneration = true;
           }
           catch (Exception)
           {

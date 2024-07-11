@@ -1,0 +1,69 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq.Expressions;
+using System.Threading.Tasks;
+using Raven.Abstractions.Data;
+using Raven.Client.Spatial;
+using Raven.Json.Linq;
+
+namespace Raven.Client
+{
+	///<summary>
+	/// Asynchronous query against a raven index
+	///</summary>
+	public interface IAsyncDocumentQuery<T> : IDocumentQueryBase<T, IAsyncDocumentQuery<T>>
+	{
+
+		/// <summary>
+		/// Selects the specified fields directly from the index
+		/// </summary>
+		/// <typeparam name="TProjection">The type of the projection.</typeparam>
+		/// <param name="fields">The fields.</param>
+		IAsyncDocumentQuery<TProjection> SelectFields<TProjection>(params string[] fields);
+
+		/// <summary>
+		/// Selects all the projection fields directly from the index
+		/// </summary>
+		/// <typeparam name="TProjection">The type of the projection.</typeparam>
+		IAsyncDocumentQuery<TProjection> SelectFields<TProjection>();
+
+		/// <summary>
+		/// Gets the query result
+		/// Execute the query the first time that this is called.
+		/// </summary>
+		/// <value>The query result.</value>
+		Task<QueryResult> QueryResultAsync { get; }
+
+		/// <summary>
+		/// Gets the query result
+		/// </summary>
+		/// <value>The query result.</value>
+		Task<IList<T>> ToListAsync();
+
+
+		/// <summary>
+		/// Create the index query object for this query
+		/// </summary>
+		IndexQuery GetIndexQuery(bool isAsync);
+
+		IAsyncDocumentQuery<T> Spatial(Expression<Func<T, object>> path, Func<SpatialCriteriaFactory, SpatialCriteria> clause);
+
+		IAsyncDocumentQuery<T> Spatial(string name, Func<SpatialCriteriaFactory, SpatialCriteria> clause);
+
+		/// <summary>
+		/// Get the facets as per the specified doc with the given start and pageSize
+		/// </summary>
+		Task<FacetResults> GetFacetsAsync(string facetSetupDoc, int facetStart, int? facetPageSize);
+
+		/// <summary>
+		/// Get the facets as per the specified facets with the given start and pageSize
+		/// </summary>
+		Task<FacetResults> GetFacetsAsync(List<Facet> facets, int facetStart, int? facetPageSize);
+
+        /// <summary>
+        /// Sets user defined inputs to the query
+        /// </summary>
+        /// <param name="queryInputs"></param>
+        void SetQueryInputs(Dictionary<string, RavenJToken> queryInputs);
+	}
+}
